@@ -26,15 +26,11 @@ public class PostController {
     @GetMapping("/getAllPosts")
     public ResponseEntity<?> getAllPosts(@RequestParam(required = false) String platform) {
         try {
-            List<Post> posts;
-
-            if (platform != null && !platform.isBlank()) {
-                posts = postRepository.findAll().stream()
-                        .filter(post -> post.getPlatforms() != null && post.getPlatforms().contains(platform.toLowerCase()))
-                        .toList();
-            } else {
-                posts = postRepository.findAll();
-            }
+            List<Post> posts = (platform != null && !platform.isBlank())
+                ? postRepository.findAll().stream()
+                    .filter(post -> post.getPlatforms() != null && post.getPlatforms().contains(platform.toLowerCase()))
+                    .toList()
+                : postRepository.findAll();
 
             if (posts.isEmpty()) {
                 return ResponseGenerator.error(HttpStatus.NO_CONTENT, "No posts available.");
@@ -46,13 +42,12 @@ public class PostController {
         }
     }
 
-    @PostMapping("/pushPost")
-    public ResponseEntity<?> createOrPostImmediately(@RequestBody Post post) {
+    @PostMapping("/pushPostContent")
+    public ResponseEntity<?> pushPostContent(@RequestBody Post post) {
         try {
             if (post.getPlatforms() == null || post.getPlatforms().isEmpty()) {
                 return ResponseGenerator.error(HttpStatus.BAD_REQUEST, "At least one platform must be specified.");
             }
-
             if (post.getContent() == null || post.getContent().isBlank()) {
                 return ResponseGenerator.error(HttpStatus.BAD_REQUEST, "Post content cannot be empty.");
             }
@@ -66,7 +61,7 @@ public class PostController {
                 });
                 post.setPosted(true);
                 Post savedPost = postRepository.save(post);
-                return ResponseGenerator.success("Post posted immediately.", savedPost);
+                return ResponseGenerator.success("Content posted immediately.", savedPost);
             }
 
             if (post.getScheduledTime().isBefore(LocalDateTime.now())) {
@@ -75,14 +70,50 @@ public class PostController {
 
             post.setPosted(false);
             Post savedPost = postRepository.save(post);
-            return ResponseGenerator.success("Post scheduled successfully.", savedPost);
-
+            return ResponseGenerator.success("Content scheduled successfully.", savedPost);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseGenerator.error(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to create or post immediately.");
+            return ResponseGenerator.error(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to post content.");
         }
     }
 
+    @PostMapping("/pushPostMedia")
+    public ResponseEntity<?> pushPostMedia(@RequestBody Post post) {
+        try {
+            if (post.getPlatforms() == null || post.getPlatforms().isEmpty()) {
+                return ResponseGenerator.error(HttpStatus.BAD_REQUEST, "At least one platform must be specified.");
+            }
+            if ((post.getMediaUrl() == null || post.getMediaUrl().isBlank()) &&
+                (post.getContent() == null || post.getContent().isBlank())) {
+                return ResponseGenerator.error(HttpStatus.BAD_REQUEST, "Either media or content must be provided.");
+            }
+    
+            if (post.getScheduledTime() == null) {
+                post.getPlatforms().forEach(platform -> {
+                    SocialMediaService service = socialMediaServices.get(platform.toLowerCase());
+                    if (service != null) {
+                        // Post content and media
+                        service.postContentWithMedia(post.getContent(), post.getMediaUrl());
+                    }
+                });
+                post.setPosted(true);
+                Post savedPost = postRepository.save(post);
+                return ResponseGenerator.success("Content and media posted immediately.", savedPost);
+            }
+    
+            if (post.getScheduledTime().isBefore(LocalDateTime.now())) {
+                return ResponseGenerator.error(HttpStatus.BAD_REQUEST, "Scheduled time must be in the future.");
+            }
+    
+            post.setPosted(false);
+            Post savedPost = postRepository.save(post);
+            return ResponseGenerator.success("Content and media scheduled successfully.", savedPost);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseGenerator.error(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to post media.");
+        }
+    }
+    
     @DeleteMapping("/deletePost/{id}")
     public ResponseEntity<?> deletePost(@PathVariable String id) {
         try {
@@ -96,7 +127,7 @@ public class PostController {
         }
     }
 
-    // Setters for testing
+    //Setters for testing
     public void setPostRepository(PostRepository postRepository) {
         this.postRepository = postRepository;
     }

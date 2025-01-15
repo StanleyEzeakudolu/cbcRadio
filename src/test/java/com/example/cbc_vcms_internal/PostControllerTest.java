@@ -60,7 +60,7 @@ public class PostControllerTest {
     }
 
     @Test
-    public void testCreatePost_ImmediateSuccess() throws Exception {
+    public void testCreatePost_ImmediateContentSuccess() throws Exception {
         Post post = new Post();
         post.setContent("Test content for immediate post");
         post.setPlatforms(List.of("twitter"));
@@ -69,17 +69,37 @@ public class PostControllerTest {
         when(postRepository.save(any(Post.class))).thenReturn(post);
         when(twitterService.postContent("Test content for immediate post")).thenReturn("Simulated Twitter Response");
 
-        mockMvc.perform(post("/api/v1/posts/pushPost")
+        mockMvc.perform(post("/api/v1/posts/pushContent")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(post)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Post posted immediately."))
+                .andExpect(jsonPath("$.message").value("Post content posted immediately."))
                 .andExpect(jsonPath("$.info.content").value("Test content for immediate post"))
                 .andExpect(jsonPath("$.info.posted").value(true));
     }
 
     @Test
-    public void testCreatePost_ScheduledSuccess() throws Exception {
+    public void testCreatePost_ImmediateMediaSuccess() throws Exception {
+        Post post = new Post();
+        post.setMediaUrl("https://example.com/media.jpg");
+        post.setPlatforms(List.of("twitter"));
+        post.setPosted(true);
+
+        when(postRepository.save(any(Post.class))).thenReturn(post);
+        when(twitterService.postContentWithMedia(null, "https://example.com/media.jpg"))
+                .thenReturn("Simulated Twitter Response with Media");
+
+        mockMvc.perform(post("/api/v1/posts/pushMedia")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(post)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Post media posted immediately."))
+                .andExpect(jsonPath("$.info.mediaUrl").value("https://example.com/media.jpg"))
+                .andExpect(jsonPath("$.info.posted").value(true));
+    }
+
+    @Test
+    public void testCreatePost_ScheduledContentSuccess() throws Exception {
         Post post = new Post();
         post.setContent("Test content for scheduling");
         post.setPlatforms(List.of("twitter"));
@@ -88,11 +108,11 @@ public class PostControllerTest {
 
         when(postRepository.save(any(Post.class))).thenReturn(post);
 
-        mockMvc.perform(post("/api/v1/posts/pushPost")
+        mockMvc.perform(post("/api/v1/posts/pushContent")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(post)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Post scheduled successfully."))
+                .andExpect(jsonPath("$.message").value("Post content scheduled successfully."))
                 .andExpect(jsonPath("$.info.content").value("Test content for scheduling"))
                 .andExpect(jsonPath("$.info.posted").value(false));
     }
@@ -104,10 +124,45 @@ public class PostControllerTest {
         post.setPlatforms(List.of("twitter"));
         post.setScheduledTime(LocalDateTime.now().minusHours(1));
 
-        mockMvc.perform(post("/api/v1/posts/pushPost")
+        mockMvc.perform(post("/api/v1/posts/pushContent")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(post)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Scheduled time must be in the future."));
+    }
+
+    @Test
+    public void testCreatePost_MissingPlatforms() throws Exception {
+        Post post = new Post();
+        post.setContent("This is content");
+        post.setScheduledTime(LocalDateTime.now().plusHours(1));
+
+        mockMvc.perform(post("/api/v1/posts/pushContent")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(post)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("At least one platform must be specified."));
+    }
+
+    @Test
+    public void testCreatePost_BothContentAndMedia() throws Exception {
+        Post post = new Post();
+        post.setContent("Test content");
+        post.setMediaUrl("https://example.com/media.jpg");
+        post.setPlatforms(List.of("twitter"));
+        post.setPosted(true);
+
+        when(postRepository.save(any(Post.class))).thenReturn(post);
+        when(twitterService.postContentWithMedia("Test content", "https://example.com/media.jpg"))
+                .thenReturn("Simulated Twitter Response with Content and Media");
+
+        mockMvc.perform(post("/api/v1/posts/pushContentAndMedia")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(post)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Post content and media posted immediately."))
+                .andExpect(jsonPath("$.info.content").value("Test content"))
+                .andExpect(jsonPath("$.info.mediaUrl").value("https://example.com/media.jpg"))
+                .andExpect(jsonPath("$.info.posted").value(true));
     }
 }
