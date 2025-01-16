@@ -11,11 +11,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/api/v1/analytics")
 public class AnalyticsController {
 
@@ -43,11 +45,13 @@ public class AnalyticsController {
                     .filter(data -> platform == null || data.getPlatform().equalsIgnoreCase(platform))
                     .filter(data -> postId == null || data.getPostId().equals(postId))
                     .filter(data -> {
-                        if (startDate == null && endDate == null) return true;
+                        if (startDate == null && endDate == null)
+                            return true;
                         LocalDateTime timestamp = data.getTimestamp();
                         LocalDateTime start = startDate != null ? LocalDateTime.parse(startDate) : null;
                         LocalDateTime end = endDate != null ? LocalDateTime.parse(endDate) : null;
-                        return (start == null || !timestamp.isBefore(start)) && (end == null || !timestamp.isAfter(end));
+                        return (start == null || !timestamp.isBefore(start))
+                                && (end == null || !timestamp.isAfter(end));
                     })
                     .toList();
 

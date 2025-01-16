@@ -4,6 +4,7 @@ import com.example.cbc_vcms_internal.models.Post;
 import com.example.cbc_vcms_internal.repositories.PostRepository;
 import com.example.cbc_vcms_internal.services.social.SocialMediaService;
 import com.example.cbc_vcms_internal.utils.ResponseGenerator;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/v1/posts")
 public class PostController {
@@ -28,11 +30,12 @@ public class PostController {
     public ResponseEntity<?> getAllPosts(@RequestParam(required = false) String platform) {
         try {
             List<Post> posts = (platform != null && !platform.isBlank())
-                ? postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdTime")).stream()
-                    .filter(post -> post.getPlatforms() != null && post.getPlatforms().contains(platform.toLowerCase()))
-                    .toList()
-                : postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdTime"));
-    
+                    ? postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdTime")).stream()
+                            .filter(post -> post.getPlatforms() != null
+                                    && post.getPlatforms().contains(platform.toLowerCase()))
+                            .toList()
+                    : postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdTime"));
+
             if (posts.isEmpty()) {
                 return ResponseGenerator.error(HttpStatus.NO_CONTENT, "No posts available.");
             }
@@ -88,10 +91,10 @@ public class PostController {
                 return ResponseGenerator.error(HttpStatus.BAD_REQUEST, "At least one platform must be specified.");
             }
             if ((post.getMediaUrl() == null || post.getMediaUrl().isBlank()) &&
-                (post.getContent() == null || post.getContent().isBlank())) {
+                    (post.getContent() == null || post.getContent().isBlank())) {
                 return ResponseGenerator.error(HttpStatus.BAD_REQUEST, "Either media or content must be provided.");
             }
-    
+
             if (post.getScheduledTime() == null) {
                 System.out.println("Scheduled time is meant to be null");
                 post.setScheduledTime(LocalDateTime.now());
@@ -107,11 +110,11 @@ public class PostController {
                 Post savedPost = postRepository.save(post);
                 return ResponseGenerator.success("Content and media posted immediately.", savedPost);
             }
-    
+
             if (post.getScheduledTime().isBefore(LocalDateTime.now())) {
                 return ResponseGenerator.error(HttpStatus.BAD_REQUEST, "Scheduled time must be in the future.");
             }
-    
+
             post.setPosted(false);
             Post savedPost = postRepository.save(post);
             return ResponseGenerator.success("Content and media scheduled successfully.", savedPost);
@@ -120,7 +123,7 @@ public class PostController {
             return ResponseGenerator.error(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to post media.");
         }
     }
-    
+
     @DeleteMapping("/deletePost/{id}")
     public ResponseEntity<?> deletePost(@PathVariable String id) {
         try {
@@ -134,7 +137,7 @@ public class PostController {
         }
     }
 
-    //Setters for testing
+    // Setters for testing
     public void setPostRepository(PostRepository postRepository) {
         this.postRepository = postRepository;
     }
