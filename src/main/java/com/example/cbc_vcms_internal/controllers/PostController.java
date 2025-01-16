@@ -5,6 +5,7 @@ import com.example.cbc_vcms_internal.repositories.PostRepository;
 import com.example.cbc_vcms_internal.services.social.SocialMediaService;
 import com.example.cbc_vcms_internal.utils.ResponseGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,11 +28,11 @@ public class PostController {
     public ResponseEntity<?> getAllPosts(@RequestParam(required = false) String platform) {
         try {
             List<Post> posts = (platform != null && !platform.isBlank())
-                ? postRepository.findAll().stream()
+                ? postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdTime")).stream()
                     .filter(post -> post.getPlatforms() != null && post.getPlatforms().contains(platform.toLowerCase()))
                     .toList()
-                : postRepository.findAll();
-
+                : postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdTime"));
+    
             if (posts.isEmpty()) {
                 return ResponseGenerator.error(HttpStatus.NO_CONTENT, "No posts available.");
             }
@@ -53,6 +54,7 @@ public class PostController {
             }
 
             if (post.getScheduledTime() == null) {
+                post.setScheduledTime(null);
                 post.getPlatforms().forEach(platform -> {
                     SocialMediaService service = socialMediaServices.get(platform.toLowerCase());
                     if (service != null) {

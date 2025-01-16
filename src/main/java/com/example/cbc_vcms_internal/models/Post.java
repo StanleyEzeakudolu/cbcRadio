@@ -1,5 +1,6 @@
 package com.example.cbc_vcms_internal.models;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -16,6 +17,8 @@ public class Post {
     private LocalDateTime scheduledTime; // Time for scheduled posting
     private boolean isPosted; // Status of whether the post is already published
     
+    @CreatedDate
+    private LocalDateTime createdTime;
 
     // Getters and Setters
     public String getId() {
@@ -64,5 +67,13 @@ public class Post {
 
     public void setPosted(boolean posted) {
         isPosted = posted;
+    }
+
+    public LocalDateTime getCreatedTime() {
+        return createdTime;
+    }
+
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createdTime = createdTime;
     }
 }

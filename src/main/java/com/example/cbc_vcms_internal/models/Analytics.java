@@ -1,5 +1,6 @@
 package com.example.cbc_vcms_internal.models;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -16,6 +17,9 @@ public class Analytics {
     private int likes;
     private int views;
     private LocalDateTime timestamp;
+
+    @CreatedDate
+    private LocalDateTime createdTime;
 
     // Default Constructor
     public Analytics() {
@@ -73,6 +77,14 @@ public class Analytics {
     }
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public LocalDateTime getCreatedTime() {
+        return createdTime;
+    }
+
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createdTime = createdTime;
     }
 
     // toString Method for Debugging
