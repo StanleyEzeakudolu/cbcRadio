@@ -55,7 +55,8 @@ public class PostController {
 
             if (post.getScheduledTime() == null) {
                 System.out.println("Scheduled time is meant to be null");
-                post.setScheduledTime(null);
+                // post.setScheduledTime(null);
+                post.setScheduledTime(LocalDateTime.now());
                 post.getPlatforms().forEach(platform -> {
                     SocialMediaService service = socialMediaServices.get(platform.toLowerCase());
                     if (service != null) {
@@ -92,6 +93,9 @@ public class PostController {
             }
     
             if (post.getScheduledTime() == null) {
+                System.out.println("Scheduled time is meant to be null");
+                post.setScheduledTime(LocalDateTime.now());
+                System.out.println("Scheduled time is now: " + post.getScheduledTime());
                 post.getPlatforms().forEach(platform -> {
                     SocialMediaService service = socialMediaServices.get(platform.toLowerCase());
                     if (service != null) {
